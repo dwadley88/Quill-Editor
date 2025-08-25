@@ -1,0 +1,165 @@
+/* ===== Page & shell ===== */
+:root {
+  --toolbar-h: 56px;       /* updated by JS after render */
+  --editor-zoom: 1;        /* sticky zoom */
+}
+
+* { box-sizing: border-box; }
+html, body { height: 100%; }
+body {
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  font-family: "Noto Sans", sans-serif;
+  background: #fff;
+}
+
+/* Container that holds the toolbar + editor */
+.editor-shell {
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+  /* Leave space for fixed toolbar (JS sets --toolbar-h precisely) */
+  padding-top: var(--toolbar-h);
+}
+
+/* ===== Fixed toolbar styling (Quill renders .ql-toolbar) ===== */
+.editor-shell .ql-toolbar.ql-snow {
+  position: fixed;
+  top: 0; left: 0; right: 0;
+  z-index: 50;
+  background: #fafafa;
+  border-bottom: 1px solid #ddd;
+  padding: 8px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+/* Group spacing */
+.editor-shell .ql-toolbar .ql-formats { display: inline-flex; gap: 6px; }
+
+/* Keep the pill look for buttons + picker labels ONLY */
+.editor-shell .ql-toolbar button,
+.editor-shell .ql-toolbar .ql-picker-label {
+  border: 1px solid #ccc !important;
+  background: #ffffff !important;
+  border-radius: 8px !important;
+  padding: 6px 6px !important;
+  height: 32px !important;
+  min-width: 32px;
+}
+
+
+/* Do NOT style color/highlight swatches' background;
+   only size them nicely and let Quill's colors show */
+.editor-shell .ql-toolbar .ql-picker .ql-color .ql-picker-item,
+.editor-shell .ql-toolbar .ql-picker .ql-background .ql-picker-item {
+  width: 18px !important;
+  height: 18px !important;
+  padding: 0 !important;
+  border: 1px solid #d1d5db !important;
+  border-radius: 6px !important;
+  background: unset !important;   /* let Quill set the color */
+}
+
+/* Optional hover outline for swatches */
+.editor-shell .ql-toolbar .ql-picker.ql-color .ql-picker-item:hover,
+.editor-shell .ql-toolbar .ql-picker.ql-background .ql-picker-item:hover {
+  box-shadow: 0 0 0 2px #e5e7eb inset;
+}
+
+
+
+/* Icon colors to near-black */
+.ql-snow .ql-stroke { stroke: #020211; }
+.ql-snow .ql-fill   { fill:   #020211; }
+.ql-snow .ql-picker { color:  #020211; }
+
+/* ===== Editor container: scrolling INSIDE the box ===== */
+#editor {                       /* Quill converts this to .ql-container */
+  /* Fill the viewport below the toolbar */
+  height: calc(100vh - var(--toolbar-h) - 16px);
+  margin: 8px;
+  border: 2px solid #ccc;
+  border-radius: 8px;
+  background: #fbfbfd;
+  /* Quill will add its own padding; we keep container simple */
+}
+
+/* Quill container look/feel */
+.editor-shell .ql-container.ql-snow {
+  border: none;                 /* we styled #editor */
+  border-radius: 8px;
+  box-shadow: inset 0 1px 0 rgba(2,2,17,.03);
+}
+
+/* Make content scroll inside the editor */
+.ql-container .ql-editor {
+  height: 100%;
+  overflow-y: auto;
+}
+
+/* Base typography for the editor */
+.ql-editor {
+  font-family: "Noto Sans", sans-serif;
+  font-size: 1rem;
+  line-height: 1.5;
+  color: #020211;
+  /* Sticky zoom */
+  transform: scale(var(--editor-zoom));
+  transform-origin: top left;
+  width: calc(100% / var(--editor-zoom));
+}
+
+/* Default paragraph spacing (plain <p>) */
+.ql-editor p { margin: 0 0 8px; }
+
+/* ===== Your custom classes (scoped) ===== */
+.ql-editor .paragraph {
+  font-size: 0.9rem;
+  color: #6e6e6e;
+  margin: 0 0 4px;
+}
+.ql-editor .grey-text {
+  font-size: 1rem;
+  color: #6e6e6e;
+  text-decoration-line: underline;
+  text-decoration-style: dotted;
+  text-underline-offset: 2px;
+  margin: 0 0 6px;
+  display: inline-block;
+}
+.ql-editor blockquote.black-indent {
+  color: #020211;
+  border-left: 4px solid #cccccc;
+  margin: 5px 0 5px 4px;
+  padding-left: 16px;
+}
+.ql-editor .blue-line {
+  color: #0953e2;
+  margin-left: 6px;
+  margin-top: 0;
+  margin-bottom: 0;
+  display: block;
+}
+.ql-editor .blue-subline {
+  color: #0953e2;
+  margin-left: 8px;
+  margin-top: .25em;
+  margin-bottom: .75em;
+  display: block;
+}
+.ql-editor .paraphrase-main-label,
+.ql-editor .paraphrase-minor-label {
+  vertical-align: -2px;
+  margin-right: 6px;
+}
+
+/* Print cleanly */
+@media print {
+  .editor-shell .ql-toolbar { display: none !important; }
+  .editor-shell { padding-top: 0; }
+  #editor { height: auto; margin: 0; border: none; }
+  .ql-editor { transform: none !important; width: 100% !important; }
+}
