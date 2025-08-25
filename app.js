@@ -70,15 +70,98 @@ wireCustomHandler('zoomIn',  () => nudgeZoom(+Z_STEP));
 wireCustomHandler('zoomOut', () => nudgeZoom(-Z_STEP));
 wireCustomHandler('print',   () => window.print());
 
-/***************
- * Register Parchment formats so classes persist
- ***************/
+ /***************
+  * Register Parchment formats so classes persist
+  ***************/
 const Parchment = Quill.import('parchment');
 const ParagraphClass = new Parchment.Attributor.Class('paragraphClass', 'paragraph', { scope: Parchment.Scope.BLOCK });
-const BlackIndent    = new Parchment.Attributor.Class('blackIndent',    'black-indent',   { scope: Parchment.Scope.BLOCK });
-const BlueLine       = new Parchment.Attributor.Class('blueLine',       'blue-line',      { scope: Parchment.Scope.BLOCK });
-const BlueSubline    = new Parchment.Attributor.Class('blueSubline',    'blue-subline',   { scope: Parchment.Scope.BLOCK });
-const ParaphraseMain = new Parchment.Attributor.Class('paraphraseMain', 'paraphrase-main',{ scope: Parchment.Scope.BLOCK });
-const ParaphraseMinor= new Parchment.Attributor.Class('paraphraseMinor','paraphrase-minor',{ scope: Parchment.Scope.BLOCK });
-const GreyText       = new Parchment.Attributor.Class('greyText',       'grey-text',      { scope: Parchment.Scope.INLINE });
-const OrigTextAttr   = new Parchment.A
+const BlackIndent = new Parchment.Attributor.Class('blackIndent', 'black-indent', { scope: Parchment.Scope.BLOCK });
+const BlueLine = new Parchment.Attributor.Class('blueLine', 'blue-line', { scope: Parchment.Scope.BLOCK });
+const BlueSubline = new Parchment.Attributor.Class('blueSubline', 'blue-subline', { scope: Parchment.Scope.BLOCK });
+const ParaphraseMain = new Parchment.Attributor.Class('paraphraseMain', 'paraphrase-main', { scope: Parchment.Scope.BLOCK });
+const ParaphraseMinor = new Parchment.Attributor.Class('paraphraseMinor', 'paraphrase-minor', { scope: Parchment.Scope.BLOCK });
+const GreyText = new Parchment.Attributor.Class('greyText', 'grey-text', { scope: Parchment.Scope.INLINE });
+
+Quill.register(ParagraphClass, true);
+Quill.register(BlackIndent, true);
+Quill.register(BlueLine, true);
+Quill.register(BlueSubline, true);
+Quill.register(ParaphraseMain, true);
+Quill.register(ParaphraseMinor, true);
+Quill.register(GreyText, true);
+
+/***************
+ * Custom keyboard shortcuts
+ ***************/
+const Delta = Quill.import('delta');
+
+function insertFeedbackBlock() {
+  const range = quill.getSelection();
+  if (!range || range.length === 0) return;
+
+  const selText = quill.getText(range.index, range.length);
+  const mirror = selText.split(/\n/).join('  ');
+
+  // mark original text
+  quill.formatText(range.index, range.length, 'greyText', true);
+
+  // find anchor line
+  let anchorOffset = -1;
+  for (let i = selText.length - 1; i >= 0; i--) {
+    if (/\S/.test(selText[i])) { anchorOffset = i; break; }
+  }
+  let anchorIndex = anchorOffset >= 0 ? range.index + anchorOffset : range.index + range.length;
+  const [anchorLine] = quill.getLine(anchorIndex);
+  let insertIndex = quill.getIndex(anchorLine) + anchorLine.length();
+
+  // skip existing feedback blocks
+  while (true) {
+    const [line] = quill.getLine(insertIndex);
+    if (!line) break;
+    const f = line.formats();
+    if (!f.blackIndent) break;
+    insertIndex += line.length();
+    const [blue] = quill.getLine(insertIndex);
+    if (blue && blue.formats().blueLine) {
+      insertIndex += blue.length();
+      const [sub] = quill.getLine(insertIndex);
+      if (sub && sub.formats().blueSubline) insertIndex += sub.length();
+    }
+  }
+
+  quill.insertText(insertIndex, mirror + '\n', 'user');
+  quill.formatLine(insertIndex, mirror.length + 1, { blockquote: true, blackIndent: true });
+
+  const blueIndex = insertIndex + mirror.length + 1;
+  quill.insertText(blueIndex, '\n', 'user');
+  quill.formatLine(blueIndex, 1, { blueLine: true });
+  quill.setSelection(blueIndex, 0, 'user');
+}
+
+function applyCorrection() {
+  const range = quill.getSelection();
+  if (!range || range.length === 0) return;
+  quill.formatText(range.index, range.length, { strike: true, color: 'orange' });
+  quill.insertText(range.index + range.length, '  ', { color: 'orange' }, 'user');
+  quill.insertText(range.index + range.length + 2, ' ', 'user');
+  quill.setSelection(range.index + range.length + 1, 0, 'user');
+}
+
+let bracketStart = null;
+quill.root.addEventListener('keydown', (e) => {
+  if (e.key === '[' && !e.ctrlKey && !e.metaKey) {
+    bracketStart = quill.getSelection()?.index ?? null;
+  } else if (e.key === ']' && bracketStart !== null) {
+    e.preventDefault();
+    const range = quill.getSelection();
+    if (!range) return;
+    const end = range.index;
+    quill.deleteText(bracketStart, 1, 'user');
+    const len = end - bracketStart;
+    quill.formatText(bracketStart, len - 1, { color: 'orange' });
+    bracketStart = null;
+  }
+});
+
+quill.keyboard.addBinding({ key: '1', shortKey: true }, insertFeedbackBlock);
+quill.keyboard.addBinding({ key: '2', shortKey: true }, applyCorrection);
