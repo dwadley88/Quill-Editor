@@ -44,7 +44,7 @@ addCustom('resetDoc','🧨', 'Reset template');
 /* Make sure handlers fire even if Quill's custom handler doesn't bind */
 function wireCustomHandler(name, handler) {
   toolbar.addHandler(name, handler);
-  toolbarEl.querySelectorAll(`.ql-${name}`).forEach(btn => {
+  bar.querySelectorAll(`.ql-${name}`).forEach(btn => {
     btn.addEventListener('click', (e) => { e.preventDefault(); handler(); });
   });
 }
@@ -69,18 +69,6 @@ function nudgeZoom(delta) { setZoom(getZoom() + delta); }
 wireCustomHandler('zoomIn',  () => nudgeZoom(+Z_STEP));
 wireCustomHandler('zoomOut', () => nudgeZoom(-Z_STEP));
 wireCustomHandler('print',   () => window.print());
-
-
-/***************
- * Fixed toolbar height → CSS var for layout
- ***************/
-
-function syncToolbarHeight() {
-  const h = Math.ceil(toolbarEl.getBoundingClientRect().height);
-  document.documentElement.style.setProperty('--toolbar-h', `${h}px`);
-}
-syncToolbarHeight();
-window.addEventListener('resize', syncToolbarHeight);
 
 /***************
  * Register Parchment formats so classes persist

@@ -1,6 +1,5 @@
 /* ===== Page & shell ===== */
 :root {
-  --toolbar-h: 56px;       /* updated by JS after render */
   --editor-zoom: 1;        /* sticky zoom */
 }
 
@@ -18,49 +17,51 @@ body {
 .editor-shell {
   display: flex;
   flex-direction: column;
-  height: 100vh;
-  /* Leave space for fixed toolbar (JS sets --toolbar-h precisely) */
-  padding-top: var(--toolbar-h);
+  height: 100vh;           /* full viewport */
+  /* toolbar is sticky so editor scrolls inside */
 }
 
-/* ===== Fixed toolbar styling (Quill renders .ql-toolbar) ===== */
+/* ===== Sticky toolbar styling (Quill renders .ql-toolbar) ===== */
 .editor-shell .ql-toolbar.ql-snow {
-  position: fixed;
-  top: 0; left: 0; right: 0;
+  position: sticky;
+  top: 0;
   z-index: 50;
   background: #fafafa;
   border-bottom: 1px solid #ddd;
   padding: 8px;
   display: flex;
   flex-wrap: wrap;
-  gap: 6px;
+  gap: 8px;
+  border-radius: 0;
 }
 
 /* Group spacing */
-.editor-shell .ql-toolbar .ql-formats { display: inline-flex; gap: 6px; }
+.editor-shell .ql-toolbar .ql-formats { display: inline-flex; gap: 8px; }
 
 /* Keep the pill look for buttons + picker labels ONLY */
 .editor-shell .ql-toolbar button,
 .editor-shell .ql-toolbar .ql-picker-label {
   border: 1px solid #ccc !important;
-  background: #ffffff !important;
+  background: #fff !important;
   border-radius: 8px !important;
-  padding: 6px 6px !important;
+  padding: 6px 10px !important;
   height: 32px !important;
-  min-width: 32px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  line-height: 1;
 }
+
+.editor-shell .ql-toolbar button svg,
+.editor-shell .ql-toolbar .ql-picker-label svg { display: block; }
 
 
 /* Do NOT style color/highlight swatches' background;
    only size them nicely and let Quill's colors show */
-.editor-shell .ql-toolbar .ql-picker .ql-color .ql-picker-item,
-.editor-shell .ql-toolbar .ql-picker .ql-background .ql-picker-item {
-  width: 18px !important;
-  height: 18px !important;
-  padding: 0 !important;
-  border: 1px solid #d1d5db !important;
-  border-radius: 6px !important;
-  background: unset !important;   /* let Quill set the color */
+.editor-shell .ql-toolbar .ql-picker.ql-color .ql-picker-item,
+.editor-shell .ql-toolbar .ql-picker.ql-background .ql-picker-item {
+  width: 18px; height: 18px; padding: 0;
+  border: 1px solid #d1d5db; border-radius: 6px; background: none;
 }
 
 /* Optional hover outline for swatches */
@@ -77,19 +78,17 @@ body {
 .ql-snow .ql-picker { color:  #020211; }
 
 /* ===== Editor container: scrolling INSIDE the box ===== */
-#editor {                       /* Quill converts this to .ql-container */
-  /* Fill the viewport below the toolbar */
-  height: calc(100vh - var(--toolbar-h) - 16px);
+#editor {
+  flex: 1;
   margin: 8px;
   border: 2px solid #ccc;
   border-radius: 8px;
   background: #fbfbfd;
-  /* Quill will add its own padding; we keep container simple */
 }
 
 /* Quill container look/feel */
 .editor-shell .ql-container.ql-snow {
-  border: none;                 /* we styled #editor */
+  border: none;
   border-radius: 8px;
   box-shadow: inset 0 1px 0 rgba(2,2,17,.03);
 }
