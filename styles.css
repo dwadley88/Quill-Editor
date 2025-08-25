@@ -31,12 +31,12 @@ body {
   padding: 8px;
   display: flex;
   flex-wrap: wrap;
-  gap: 8px;
+  gap: 6px;
   border-radius: 0;
 }
 
 /* Group spacing */
-.editor-shell .ql-toolbar .ql-formats { display: inline-flex; gap: 8px; }
+.editor-shell .ql-toolbar .ql-formats { display: inline-flex; gap: 6px; }
 
 /* Keep the pill look for buttons + picker labels ONLY */
 .editor-shell .ql-toolbar button,
@@ -44,8 +44,8 @@ body {
   border: 1px solid #ccc !important;
   background: #fff !important;
   border-radius: 8px !important;
-  padding: 6px 10px !important;
-  height: 32px !important;
+  padding: 6px 6px !important;
+  height: 32px ; width: 32px;
   display: inline-flex;
   align-items: center;
   justify-content: center;
