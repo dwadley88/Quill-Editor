@@ -66,9 +66,11 @@ function setZoom(z) {
 }
 function nudgeZoom(delta) { setZoom(getZoom() + delta); }
 
+setZoom(getZoom());
 wireCustomHandler('zoomIn',  () => nudgeZoom(+Z_STEP));
 wireCustomHandler('zoomOut', () => nudgeZoom(-Z_STEP));
 wireCustomHandler('print',   () => window.print());
+wireCustomHandler('resetDoc', () => { /* restore your template */ });
 
  /***************
   * Register Parchment formats so classes persist
@@ -83,6 +85,7 @@ const GreyText = new Parchment.Attributor.Class('greyText', 'grey-text', { scope
 const ParaphraseMainLabel = new Parchment.Attributor.Class('paraphraseMainLabel', 'paraphrase-main-label', { scope: Parchment.Scope.INLINE });
 const ParaphraseMinorLabel = new Parchment.Attributor.Class('paraphraseMinorLabel', 'paraphrase-minor-label', { scope: Parchment.Scope.INLINE });
 
+
 Quill.register(ParagraphClass, true);
 Quill.register(BlackIndent, true);
 Quill.register(BlueLine, true);
@@ -91,9 +94,11 @@ Quill.register(GreyText, true);
 Quill.register(ParaphraseMainLabel, true);
 Quill.register(ParaphraseMinorLabel, true);
 
+
 /***************
  * Custom keyboard shortcuts
  ***************/
+const Delta = Quill.import('delta');
 
 function insertArrowLine(index, indent) {
   const arrow = indent === 0 ? '\u2192' : '\u21B3';
@@ -105,6 +110,10 @@ function insertArrowLine(index, indent) {
     .insert(' ')
     .insert('\n', lineAttr);
   quill.updateContents(delta, 'user');
+  quill.insertText(index, arrow, labelAttr, 'user');
+  quill.insertText(index + 1, ' ', {}, 'user');
+  quill.insertText(index + 2, '\n', 'user');
+  quill.formatLine(index + 2, 1, lineAttr);
   quill.setSelection(index + 2, 0, 'user');
 }
 
@@ -178,7 +187,6 @@ quill.root.addEventListener('keydown', (e) => {
 
 quill.keyboard.addBinding({ key: '1', shortKey: true }, insertFeedbackBlock);
 quill.keyboard.addBinding({ key: '2', shortKey: true }, applyCorrection);
-
 quill.keyboard.addBinding({ key: 'Enter' }, (range, context) => {
   const [line] = quill.getLine(range.index);
   if (!line) return true;
