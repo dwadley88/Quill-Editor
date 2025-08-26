@@ -76,11 +76,14 @@ wireCustomHandler('resetDoc', () => { /* restore your template */ });
   * Register Parchment formats so classes persist
   ***************/
 const Parchment = Quill.import('parchment');
+const Delta = Quill.import('delta');
 const ParagraphClass = new Parchment.Attributor.Class('paragraphClass', 'paragraph', { scope: Parchment.Scope.BLOCK });
 const BlackIndent = new Parchment.Attributor.Class('blackIndent', 'black-indent', { scope: Parchment.Scope.BLOCK });
 const BlueLine = new Parchment.Attributor.Class('blueLine', 'blue-line', { scope: Parchment.Scope.BLOCK });
 const BlueSubline = new Parchment.Attributor.Class('blueSubline', 'blue-subline', { scope: Parchment.Scope.BLOCK });
 const GreyText = new Parchment.Attributor.Class('greyText', 'grey-text', { scope: Parchment.Scope.INLINE });
+const ParaphraseMainLabel = new Parchment.Attributor.Class('paraphraseMainLabel', 'paraphrase-main-label', { scope: Parchment.Scope.INLINE });
+const ParaphraseMinorLabel = new Parchment.Attributor.Class('paraphraseMinorLabel', 'paraphrase-minor-label', { scope: Parchment.Scope.INLINE });
 
 
 Quill.register(ParagraphClass, true);
@@ -88,6 +91,8 @@ Quill.register(BlackIndent, true);
 Quill.register(BlueLine, true);
 Quill.register(BlueSubline, true);
 Quill.register(GreyText, true);
+Quill.register(ParaphraseMainLabel, true);
+Quill.register(ParaphraseMinorLabel, true);
 
 
 /***************
@@ -99,6 +104,12 @@ function insertArrowLine(index, indent) {
   const arrow = indent === 0 ? '\u2192' : '\u21B3';
   const labelAttr = indent === 0 ? { paraphraseMainLabel: true } : { paraphraseMinorLabel: true };
   const lineAttr = indent === 0 ? { blueLine: true } : { blueSubline: true };
+  const delta = new Delta()
+    .retain(index)
+    .insert(arrow, labelAttr)
+    .insert(' ')
+    .insert('\n', lineAttr);
+  quill.updateContents(delta, 'user');
   quill.insertText(index, arrow, labelAttr, 'user');
   quill.insertText(index + 1, ' ', {}, 'user');
   quill.insertText(index + 2, '\n', 'user');
@@ -140,11 +151,11 @@ function insertFeedbackBlock() {
     }
   }
 
-  quill.insertText(insertIndex, mirror + '\n', 'user');
-  quill.formatLine(insertIndex, mirror.length + 1, { blockquote: true, blackIndent: true });
-
-  const blueIndex = insertIndex + mirror.length + 1;
-  insertArrowLine(blueIndex, 0);
+  const delta = new Delta()
+    .retain(insertIndex)
+    .insert(mirror + '\n', { blockquote: true, blackIndent: true });
+  quill.updateContents(delta, 'user');
+  insertArrowLine(insertIndex + mirror.length + 1, 0);
 }
 
 function applyCorrection() {
@@ -168,8 +179,9 @@ quill.root.addEventListener('keydown', (e) => {
     quill.deleteText(bracketStart, 1, 'user');
     const len = end - bracketStart;
     quill.formatText(bracketStart, len - 1, { color: 'orange' });
-    quill.insertText(bracketStart + len - 1, ' ', { color: 'black'}, 'user');
+    quill.insertText(bracketStart + len - 1, ' ', {}, 'user');
     quill.setSelection(bracketStart + len, 0, 'user');
+    bracketStart = null;
   }
 });
 
