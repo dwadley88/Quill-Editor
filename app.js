@@ -66,9 +66,11 @@ function setZoom(z) {
 }
 function nudgeZoom(delta) { setZoom(getZoom() + delta); }
 
+setZoom(getZoom());
 wireCustomHandler('zoomIn',  () => nudgeZoom(+Z_STEP));
 wireCustomHandler('zoomOut', () => nudgeZoom(-Z_STEP));
 wireCustomHandler('print',   () => window.print());
+wireCustomHandler('resetDoc', () => { /* restore your template */ });
 
  /***************
   * Register Parchment formats so classes persist
@@ -78,22 +80,31 @@ const ParagraphClass = new Parchment.Attributor.Class('paragraphClass', 'paragra
 const BlackIndent = new Parchment.Attributor.Class('blackIndent', 'black-indent', { scope: Parchment.Scope.BLOCK });
 const BlueLine = new Parchment.Attributor.Class('blueLine', 'blue-line', { scope: Parchment.Scope.BLOCK });
 const BlueSubline = new Parchment.Attributor.Class('blueSubline', 'blue-subline', { scope: Parchment.Scope.BLOCK });
-const ParaphraseMain = new Parchment.Attributor.Class('paraphraseMain', 'paraphrase-main', { scope: Parchment.Scope.BLOCK });
-const ParaphraseMinor = new Parchment.Attributor.Class('paraphraseMinor', 'paraphrase-minor', { scope: Parchment.Scope.BLOCK });
 const GreyText = new Parchment.Attributor.Class('greyText', 'grey-text', { scope: Parchment.Scope.INLINE });
+
 
 Quill.register(ParagraphClass, true);
 Quill.register(BlackIndent, true);
 Quill.register(BlueLine, true);
 Quill.register(BlueSubline, true);
-Quill.register(ParaphraseMain, true);
-Quill.register(ParaphraseMinor, true);
 Quill.register(GreyText, true);
+
 
 /***************
  * Custom keyboard shortcuts
  ***************/
 const Delta = Quill.import('delta');
+
+function insertArrowLine(index, indent) {
+  const arrow = indent === 0 ? '\u2192' : '\u21B3';
+  const labelAttr = indent === 0 ? { paraphraseMainLabel: true } : { paraphraseMinorLabel: true };
+  const lineAttr = indent === 0 ? { blueLine: true } : { blueSubline: true };
+  quill.insertText(index, arrow, labelAttr, 'user');
+  quill.insertText(index + 1, ' ', {}, 'user');
+  quill.insertText(index + 2, '\n', 'user');
+  quill.formatLine(index + 2, 1, lineAttr);
+  quill.setSelection(index + 2, 0, 'user');
+}
 
 function insertFeedbackBlock() {
   const range = quill.getSelection();
@@ -133,9 +144,7 @@ function insertFeedbackBlock() {
   quill.formatLine(insertIndex, mirror.length + 1, { blockquote: true, blackIndent: true });
 
   const blueIndex = insertIndex + mirror.length + 1;
-  quill.insertText(blueIndex, '\n', 'user');
-  quill.formatLine(blueIndex, 1, { blueLine: true });
-  quill.setSelection(blueIndex, 0, 'user');
+  insertArrowLine(blueIndex, 0);
 }
 
 function applyCorrection() {
@@ -159,9 +168,75 @@ quill.root.addEventListener('keydown', (e) => {
     quill.deleteText(bracketStart, 1, 'user');
     const len = end - bracketStart;
     quill.formatText(bracketStart, len - 1, { color: 'orange' });
-    bracketStart = null;
+    quill.insertText(bracketStart + len - 1, ' ', {}, 'user');
+    quill.setSelection(bracketStart + len, 0, 'user');
   }
 });
 
 quill.keyboard.addBinding({ key: '1', shortKey: true }, insertFeedbackBlock);
 quill.keyboard.addBinding({ key: '2', shortKey: true }, applyCorrection);
+quill.keyboard.addBinding({ key: 'Enter' }, (range, context) => {
+  const [line] = quill.getLine(range.index);
+  if (!line) return true;
+  const formats = line.formats();
+  const lineIndex = quill.getIndex(line);
+  if (formats.blackIndent) {
+    insertArrowLine(lineIndex + line.length(), 0);
+    return false;
+  }
+  if (formats.blueLine) {
+    const [prevLine] = quill.getLine(lineIndex - 1);
+    if (line.length() <= 3 && prevLine && prevLine.formats().blueLine) {
+      quill.deleteText(lineIndex, 2, 'user');
+      quill.formatLine(lineIndex, 1, { blueLine: false, paragraphClass: true });
+      quill.setSelection(lineIndex, 0, 'user');
+      return false;
+    }
+    insertArrowLine(lineIndex + line.length(), 0);
+    return false;
+  }
+  if (formats.blueSubline) {
+    const [prevLine] = quill.getLine(lineIndex - 1);
+    if (line.length() <= 3 && prevLine && prevLine.formats().blueSubline) {
+      quill.deleteText(lineIndex, 2, 'user');
+      quill.formatLine(lineIndex, 1, { blueSubline: false, paragraphClass: true });
+      quill.setSelection(lineIndex, 0, 'user');
+      return false;
+    }
+    insertArrowLine(lineIndex + line.length(), 1);
+    return false;
+  }
+  return true;
+});
+
+quill.keyboard.addBinding({ key: 9 }, (range, context) => {
+  const [line] = quill.getLine(range.index);
+  if (!line) return true;
+  const formats = line.formats();
+  const lineIndex = quill.getIndex(line);
+  if (formats.blueLine && range.index === lineIndex) {
+    quill.deleteText(lineIndex, 2, 'user');
+    quill.insertText(lineIndex, '\u21B3', { paraphraseMinorLabel: true }, 'user');
+    quill.insertText(lineIndex + 1, ' ', {}, 'user');
+    quill.formatLine(lineIndex, line.length(), { blueLine: false, blueSubline: true });
+    quill.setSelection(lineIndex + 2, 0, 'user');
+    return false;
+  }
+  return true;
+});
+
+quill.keyboard.addBinding({ key: 9, shiftKey: true }, (range, context) => {
+  const [line] = quill.getLine(range.index);
+  if (!line) return true;
+  const formats = line.formats();
+  const lineIndex = quill.getIndex(line);
+  if (formats.blueSubline && range.index === lineIndex) {
+    quill.deleteText(lineIndex, 2, 'user');
+    quill.insertText(lineIndex, '\u2192', { paraphraseMainLabel: true }, 'user');
+    quill.insertText(lineIndex + 1, ' ', {}, 'user');
+    quill.formatLine(lineIndex, line.length(), { blueLine: true, blueSubline: false });
+    quill.setSelection(lineIndex + 2, 0, 'user');
+    return false;
+  }
+  return true;
+});
