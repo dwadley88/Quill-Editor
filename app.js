@@ -76,11 +76,14 @@ wireCustomHandler('resetDoc', () => { /* restore your template */ });
   * Register Parchment formats so classes persist
   ***************/
 const Parchment = Quill.import('parchment');
-const ParagraphClass = new Parchment.Attributor.Class('paragraphClass', 'paragraph', { scope: Parchment.Scope.BLOCK });
-const BlackIndent = new Parchment.Attributor.Class('blackIndent', 'black-indent', { scope: Parchment.Scope.BLOCK });
-const BlueLine = new Parchment.Attributor.Class('blueLine', 'blue-line', { scope: Parchment.Scope.BLOCK });
-const BlueSubline = new Parchment.Attributor.Class('blueSubline', 'blue-subline', { scope: Parchment.Scope.BLOCK });
-const GreyText = new Parchment.Attributor.Class('greyText', 'grey-text', { scope: Parchment.Scope.INLINE });
+const ClassAttributor = Quill.import('parchment/class');
+const ParagraphClass = new ClassAttributor('paragraphClass', 'ql-paragraph', { scope: Parchment.Scope.BLOCK });
+const BlackIndent = new ClassAttributor('blackIndent', 'ql-black-indent', { scope: Parchment.Scope.BLOCK });
+const BlueLine = new ClassAttributor('blueLine', 'ql-blue-line', { scope: Parchment.Scope.BLOCK });
+const BlueSubline = new ClassAttributor('blueSubline', 'ql-blue-subline', { scope: Parchment.Scope.BLOCK });
+const GreyText = new ClassAttributor('greyText', 'ql-grey-text', { scope: Parchment.Scope.INLINE });
+const ParaphraseMainLabel = new ClassAttributor('paraphraseMainLabel', 'ql-paraphrase-main-label', { scope: Parchment.Scope.INLINE });
+const ParaphraseMinorLabel = new ClassAttributor('paraphraseMinorLabel', 'ql-paraphrase-minor-label', { scope: Parchment.Scope.INLINE });
 
 
 Quill.register(ParagraphClass, true);
@@ -88,6 +91,8 @@ Quill.register(BlackIndent, true);
 Quill.register(BlueLine, true);
 Quill.register(BlueSubline, true);
 Quill.register(GreyText, true);
+Quill.register(ParaphraseMainLabel, true);
+Quill.register(ParaphraseMinorLabel, true);
 
 
 /***************
@@ -97,8 +102,12 @@ const Delta = Quill.import('delta');
 
 function insertArrowLine(index, indent, setCursor = true) {
   const arrow = indent === 0 ? '\u2192' : '\u21B3';
-  const labelAttr = indent === 0 ? { paraphraseMainLabel: true } : { paraphraseMinorLabel: true };
-  const lineAttr = indent === 0 ? { blueLine: true } : { blueSubline: true };
+  const labelAttr = indent === 0
+    ? { paraphraseMainLabel: 'ql-paraphrase-main-label' }
+    : { paraphraseMinorLabel: 'ql-paraphrase-minor-label' };
+  const lineAttr = indent === 0
+    ? { blueLine: 'ql-blue-line' }
+    : { blueSubline: 'ql-blue-subline' };
   quill.insertText(index, arrow, labelAttr, 'user');
   quill.insertText(index + 1, ' ', {}, 'user');
   quill.insertText(index + 2, '\n', 'user');
@@ -115,7 +124,7 @@ function insertFeedbackBlock() {
   const mirror = selText.split(/\n/).join('  ');
 
   // mark original text
-  quill.formatText(range.index, range.length, 'greyText', true);
+  quill.formatText(range.index, range.length, { greyText: 'ql-grey-text' });
 
   // find anchor line
   let anchorOffset = -1;
@@ -142,7 +151,7 @@ function insertFeedbackBlock() {
   }
 
   quill.insertText(insertIndex, mirror + '\n', 'user');
-  quill.formatLine(insertIndex, mirror.length + 1, { blockquote: true, blackIndent: true });
+  quill.formatLine(insertIndex, mirror.length + 1, { blockquote: true, blackIndent: 'ql-black-indent' });
 
   const firstArrow = insertIndex + mirror.length + 1;
   const afterParaphrase = insertArrowLine(firstArrow, 0, false);
@@ -181,65 +190,60 @@ quill.keyboard.addBinding({ key: '2', shortKey: true }, applyCorrection);
 quill.keyboard.addBinding({ key: 'Enter' }, (range, context) => {
   const [line] = quill.getLine(range.index);
   if (!line) return true;
+
   const formats = line.formats();
   const lineIndex = quill.getIndex(line);
+
   if (formats.blackIndent) {
     insertArrowLine(lineIndex + line.length(), 0);
     return false;
   }
   if (formats.blueLine) {
-    const [prevLine] = quill.getLine(lineIndex - 1);
-    if (line.length() <= 3 && prevLine && prevLine.formats().blueLine) {
-      quill.deleteText(lineIndex, 2, 'user');
-      quill.formatLine(lineIndex, 1, { blueLine: false, paragraphClass: true });
-      quill.setSelection(lineIndex, 0, 'user');
-      return false;
-    }
     insertArrowLine(lineIndex + line.length(), 0);
     return false;
   }
   if (formats.blueSubline) {
-    const [prevLine] = quill.getLine(lineIndex - 1);
-    if (line.length() <= 3 && prevLine && prevLine.formats().blueSubline) {
-      quill.deleteText(lineIndex, 2, 'user');
-      quill.formatLine(lineIndex, 1, { blueSubline: false, paragraphClass: true });
-      quill.setSelection(lineIndex, 0, 'user');
-      return false;
-    }
     insertArrowLine(lineIndex + line.length(), 1);
     return false;
   }
+
   return true;
 });
 
 quill.keyboard.addBinding({ key: 9 }, (range, context) => {
   const [line] = quill.getLine(range.index);
   if (!line) return true;
+
   const formats = line.formats();
   const lineIndex = quill.getIndex(line);
-  if (formats.blueLine && range.index === lineIndex) {
+
+  if (formats.blueLine) {
     quill.deleteText(lineIndex, 2, 'user');
-    quill.insertText(lineIndex, '\u21B3', { paraphraseMinorLabel: true }, 'user');
+    quill.insertText(lineIndex, '\u21B3', { paraphraseMinorLabel: 'ql-paraphrase-minor-label' }, 'user');
     quill.insertText(lineIndex + 1, ' ', {}, 'user');
-    quill.formatLine(lineIndex, line.length(), { blueLine: false, blueSubline: true });
+    quill.formatLine(lineIndex, line.length(), { blueLine: false, blueSubline: 'ql-blue-subline' });
     quill.setSelection(lineIndex + 2, 0, 'user');
     return false;
   }
+
   return true;
 });
 
 quill.keyboard.addBinding({ key: 9, shiftKey: true }, (range, context) => {
   const [line] = quill.getLine(range.index);
   if (!line) return true;
+
   const formats = line.formats();
   const lineIndex = quill.getIndex(line);
-  if (formats.blueSubline && range.index === lineIndex) {
+
+  if (formats.blueSubline) {
     quill.deleteText(lineIndex, 2, 'user');
-    quill.insertText(lineIndex, '\u2192', { paraphraseMainLabel: true }, 'user');
+    quill.insertText(lineIndex, '\u2192', { paraphraseMainLabel: 'ql-paraphrase-main-label' }, 'user');
     quill.insertText(lineIndex + 1, ' ', {}, 'user');
-    quill.formatLine(lineIndex, line.length(), { blueLine: true, blueSubline: false });
+    quill.formatLine(lineIndex, line.length(), { blueSubline: false, blueLine: 'ql-blue-line' });
     quill.setSelection(lineIndex + 2, 0, 'user');
     return false;
   }
+
   return true;
 });
