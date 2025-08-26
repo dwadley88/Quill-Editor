@@ -168,7 +168,7 @@ quill.root.addEventListener('keydown', (e) => {
     quill.deleteText(bracketStart, 1, 'user');
     const len = end - bracketStart;
     quill.formatText(bracketStart, len - 1, { color: 'orange' });
-    quill.insertText(bracketStart + len - 1, ' ', {}, 'user');
+    quill.insertText(bracketStart + len - 1, ' ', { color: 'black'}, 'user');
     quill.setSelection(bracketStart + len, 0, 'user');
   }
 });
