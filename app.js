@@ -66,9 +66,11 @@ function setZoom(z) {
 }
 function nudgeZoom(delta) { setZoom(getZoom() + delta); }
 
+setZoom(getZoom());
 wireCustomHandler('zoomIn',  () => nudgeZoom(+Z_STEP));
 wireCustomHandler('zoomOut', () => nudgeZoom(-Z_STEP));
 wireCustomHandler('print',   () => window.print());
+wireCustomHandler('resetDoc', () => { /* restore your template */ });
 
  /***************
   * Register Parchment formats so classes persist
@@ -79,20 +81,19 @@ const BlackIndent = new Parchment.Attributor.Class('blackIndent', 'black-indent'
 const BlueLine = new Parchment.Attributor.Class('blueLine', 'blue-line', { scope: Parchment.Scope.BLOCK });
 const BlueSubline = new Parchment.Attributor.Class('blueSubline', 'blue-subline', { scope: Parchment.Scope.BLOCK });
 const GreyText = new Parchment.Attributor.Class('greyText', 'grey-text', { scope: Parchment.Scope.INLINE });
-const ParaphraseMainLabel = new Parchment.Attributor.Class('paraphraseMainLabel', 'paraphrase-main-label', { scope: Parchment.Scope.INLINE });
-const ParaphraseMinorLabel = new Parchment.Attributor.Class('paraphraseMinorLabel', 'paraphrase-minor-label', { scope: Parchment.Scope.INLINE });
+
 
 Quill.register(ParagraphClass, true);
 Quill.register(BlackIndent, true);
 Quill.register(BlueLine, true);
 Quill.register(BlueSubline, true);
 Quill.register(GreyText, true);
-Quill.register(ParaphraseMainLabel, true);
-Quill.register(ParaphraseMinorLabel, true);
+
 
 /***************
  * Custom keyboard shortcuts
  ***************/
+const Delta = Quill.import('delta');
 
 function insertArrowLine(index, indent) {
   const arrow = indent === 0 ? '\u2192' : '\u21B3';
@@ -169,13 +170,11 @@ quill.root.addEventListener('keydown', (e) => {
     quill.formatText(bracketStart, len - 1, { color: 'orange' });
     quill.insertText(bracketStart + len - 1, ' ', {}, 'user');
     quill.setSelection(bracketStart + len, 0, 'user');
-    bracketStart = null;
   }
 });
 
 quill.keyboard.addBinding({ key: '1', shortKey: true }, insertFeedbackBlock);
 quill.keyboard.addBinding({ key: '2', shortKey: true }, applyCorrection);
-
 quill.keyboard.addBinding({ key: 'Enter' }, (range, context) => {
   const [line] = quill.getLine(range.index);
   if (!line) return true;
