@@ -115,12 +115,12 @@ body {
 .ql-editor p { margin: 0 0 8px; }
 
 /* ===== Your custom classes (scoped) ===== */
-.ql-editor p.ql-paragraph {
+.ql-editor .paragraph {
   font-size: 0.9rem;
   color: #6e6e6e;
   margin: 0 0 4px;
 }
-.ql-editor .ql-grey-text {
+.ql-editor .grey-text {
   font-size: 1rem;
   color: #6e6e6e;
   text-decoration-line: underline;
@@ -129,28 +129,28 @@ body {
   margin: 0 0 6px;
   display: inline-block;
 }
-.ql-editor blockquote.ql-black-indent {
+.ql-editor blockquote.black-indent {
   color: #020211;
   border-left: 4px solid #cccccc;
   margin: 5px 0 5px 4px;
   padding-left: 16px;
 }
-.ql-editor p.ql-blue-line {
+.ql-editor .blue-line {
   color: #0953e2;
   margin-left: 6px;
   margin-top: 0;
   margin-bottom: 0;
   display: block;
 }
-.ql-editor p.ql-blue-subline {
+.ql-editor .blue-subline {
   color: #0953e2;
   margin-left: 8px;
   margin-top: .25em;
   margin-bottom: .75em;
   display: block;
 }
-.ql-editor .ql-paraphrase-main-label,
-.ql-editor .ql-paraphrase-minor-label {
+.ql-editor .paraphrase-main-label,
+.ql-editor .paraphrase-minor-label {
   vertical-align: -2px;
   margin-right: 6px;
 }
