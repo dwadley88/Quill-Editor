@@ -1,0 +1,9 @@
+{
+  "name": "quill-editor",
+  "version": "1.0.0",
+  "description": "Quill paraphrase editor",
+  "private": true,
+  "scripts": {
+    "test": "echo \"No tests\""
+  }
+}
