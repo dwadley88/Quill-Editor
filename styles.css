@@ -115,12 +115,12 @@ body {
 .ql-editor p { margin: 0 0 8px; }
 
 /* ===== Your custom classes (scoped) ===== */
-.ql-editor .ql-paragraph {
+.ql-editor .paragraph {
   font-size: 0.9rem;
   color: #6e6e6e;
   margin: 0 0 4px;
 }
-.ql-editor .ql-grey-text {
+.ql-editor .grey-text {
   font-size: 1rem;
   color: #6e6e6e;
   text-decoration-line: underline;

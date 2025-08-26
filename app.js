@@ -81,6 +81,7 @@ const ParagraphClass = new ClassAttributor('paragraphClass', 'ql-paragraph', { s
 const GreyText = new ClassAttributor('greyText', 'ql-grey-text', { scope: Parchment.Scope.INLINE });
 
 
+
 Quill.register(ParagraphClass, true);
 Quill.register(GreyText, true);
 
@@ -103,7 +104,7 @@ function insertFeedbackBlock() {
   const mirror = selText.split(/\n/).join('  ');
 
   // mark original text
-  quill.formatText(range.index, range.length, { greyText: 'ql-grey-text' });
+  quill.formatText(range.index, range.length, 'greyText', true);
 
   // find anchor line
   let anchorOffset = -1;
@@ -131,6 +132,7 @@ function insertFeedbackBlock() {
 
   quill.insertText(insertIndex, mirror + '\n', 'user');
   quill.formatLine(insertIndex, mirror.length + 1, { list: 'bullet', indent: 0 });
+
 
   const firstBullet = insertIndex + mirror.length + 1;
   const afterFirst = insertFeedbackLine(firstBullet, 1, false);
@@ -166,7 +168,6 @@ quill.root.addEventListener('keydown', (e) => {
 
 quill.keyboard.addBinding({ key: '1', shortKey: true }, insertFeedbackBlock);
 quill.keyboard.addBinding({ key: '2', shortKey: true }, applyCorrection);
-
 quill.keyboard.addBinding({ key: 9 }, (range, context) => {
   const [line] = quill.getLine(range.index);
   if (!line) return true;
