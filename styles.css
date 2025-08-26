@@ -129,6 +129,31 @@ body {
   margin: 0 0 6px;
   display: inline-block;
 }
+.ql-editor blockquote.black-indent {
+  color: #020211;
+  border-left: 4px solid #cccccc;
+  margin: 5px 0 5px 4px;
+  padding-left: 16px;
+}
+.ql-editor .blue-line {
+  color: #0953e2;
+  margin-left: 6px;
+  margin-top: 0;
+  margin-bottom: 0;
+  display: block;
+}
+.ql-editor .blue-subline {
+  color: #0953e2;
+  margin-left: 8px;
+  margin-top: .25em;
+  margin-bottom: .75em;
+  display: block;
+}
+.ql-editor .paraphrase-main-label,
+.ql-editor .paraphrase-minor-label {
+  vertical-align: -2px;
+  margin-right: 6px;
+}
 
 /* Print cleanly */
 @media print {

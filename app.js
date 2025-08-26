@@ -76,24 +76,35 @@ wireCustomHandler('resetDoc', () => { /* restore your template */ });
   * Register Parchment formats so classes persist
   ***************/
 const Parchment = Quill.import('parchment');
-const ClassAttributor = Quill.import('parchment/class');
-const ParagraphClass = new ClassAttributor('paragraphClass', 'ql-paragraph', { scope: Parchment.Scope.BLOCK });
-const GreyText = new ClassAttributor('greyText', 'ql-grey-text', { scope: Parchment.Scope.INLINE });
-
+const ParagraphClass = new Parchment.Attributor.Class('paragraphClass', 'paragraph', { scope: Parchment.Scope.BLOCK });
+const BlackIndent = new Parchment.Attributor.Class('blackIndent', 'black-indent', { scope: Parchment.Scope.BLOCK });
+const BlueLine = new Parchment.Attributor.Class('blueLine', 'blue-line', { scope: Parchment.Scope.BLOCK });
+const BlueSubline = new Parchment.Attributor.Class('blueSubline', 'blue-subline', { scope: Parchment.Scope.BLOCK });
+const GreyText = new Parchment.Attributor.Class('greyText', 'grey-text', { scope: Parchment.Scope.INLINE });
 
 
 Quill.register(ParagraphClass, true);
+Quill.register(BlackIndent, true);
+Quill.register(BlueLine, true);
+Quill.register(BlueSubline, true);
 Quill.register(GreyText, true);
 
 
 /***************
  * Custom keyboard shortcuts
  ***************/
-function insertFeedbackLine(index, indent, setCursor = true) {
-  quill.insertText(index, '\n', 'user');
-  quill.formatLine(index, 1, { list: 'bullet', indent });
-  if (setCursor) quill.setSelection(index, 0, 'user');
-  return index + 1;
+const Delta = Quill.import('delta');
+
+function insertArrowLine(index, indent, setCursor = true) {
+  const arrow = indent === 0 ? '\u2192' : '\u21B3';
+  const labelAttr = indent === 0 ? { paraphraseMainLabel: true } : { paraphraseMinorLabel: true };
+  const lineAttr = indent === 0 ? { blueLine: true } : { blueSubline: true };
+  quill.insertText(index, arrow, labelAttr, 'user');
+  quill.insertText(index + 1, ' ', {}, 'user');
+  quill.insertText(index + 2, '\n', 'user');
+  quill.formatLine(index + 2, 1, lineAttr);
+  if (setCursor) quill.setSelection(index + 2, 0, 'user');
+  return index + 3;
 }
 
 function insertFeedbackBlock() {
@@ -120,24 +131,23 @@ function insertFeedbackBlock() {
     const [line] = quill.getLine(insertIndex);
     if (!line) break;
     const f = line.formats();
-    if (f.list !== 'bullet' || (f.indent || 0) !== 0) break;
+    if (!f.blackIndent) break;
     insertIndex += line.length();
     const [blue] = quill.getLine(insertIndex);
-    if (blue && blue.formats().list === 'bullet' && (blue.formats().indent || 0) === 1) {
+    if (blue && blue.formats().blueLine) {
       insertIndex += blue.length();
       const [sub] = quill.getLine(insertIndex);
-      if (sub && sub.formats().list === 'bullet' && (sub.formats().indent || 0) === 2) insertIndex += sub.length();
+      if (sub && sub.formats().blueSubline) insertIndex += sub.length();
     }
   }
 
   quill.insertText(insertIndex, mirror + '\n', 'user');
-  quill.formatLine(insertIndex, mirror.length + 1, { list: 'bullet', indent: 0 });
+  quill.formatLine(insertIndex, mirror.length + 1, { blockquote: true, blackIndent: true });
 
-
-  const firstBullet = insertIndex + mirror.length + 1;
-  const afterFirst = insertFeedbackLine(firstBullet, 1, false);
-  insertFeedbackLine(afterFirst, 2, false);
-  quill.setSelection(firstBullet, 0, 'user');
+  const firstArrow = insertIndex + mirror.length + 1;
+  const afterParaphrase = insertArrowLine(firstArrow, 0, false);
+  insertArrowLine(afterParaphrase, 1, false);
+  quill.setSelection(firstArrow + 2, 0, 'user');
 }
 
 function applyCorrection() {
@@ -168,16 +178,68 @@ quill.root.addEventListener('keydown', (e) => {
 
 quill.keyboard.addBinding({ key: '1', shortKey: true }, insertFeedbackBlock);
 quill.keyboard.addBinding({ key: '2', shortKey: true }, applyCorrection);
+quill.keyboard.addBinding({ key: 'Enter' }, (range, context) => {
+  const [line] = quill.getLine(range.index);
+  if (!line) return true;
+  const formats = line.formats();
+  const lineIndex = quill.getIndex(line);
+  if (formats.blackIndent) {
+    insertArrowLine(lineIndex + line.length(), 0);
+    return false;
+  }
+  if (formats.blueLine) {
+    const [prevLine] = quill.getLine(lineIndex - 1);
+    if (line.length() <= 3 && prevLine && prevLine.formats().blueLine) {
+      quill.deleteText(lineIndex, 2, 'user');
+      quill.formatLine(lineIndex, 1, { blueLine: false, paragraphClass: true });
+      quill.setSelection(lineIndex, 0, 'user');
+      return false;
+    }
+    insertArrowLine(lineIndex + line.length(), 0);
+    return false;
+  }
+  if (formats.blueSubline) {
+    const [prevLine] = quill.getLine(lineIndex - 1);
+    if (line.length() <= 3 && prevLine && prevLine.formats().blueSubline) {
+      quill.deleteText(lineIndex, 2, 'user');
+      quill.formatLine(lineIndex, 1, { blueSubline: false, paragraphClass: true });
+      quill.setSelection(lineIndex, 0, 'user');
+      return false;
+    }
+    insertArrowLine(lineIndex + line.length(), 1);
+    return false;
+  }
+  return true;
+});
+
 quill.keyboard.addBinding({ key: 9 }, (range, context) => {
   const [line] = quill.getLine(range.index);
   if (!line) return true;
-  const indent = (line.formats().indent || 0);
-  return indent > 0; // block Tab if indent is 0
+  const formats = line.formats();
+  const lineIndex = quill.getIndex(line);
+  if (formats.blueLine && range.index === lineIndex) {
+    quill.deleteText(lineIndex, 2, 'user');
+    quill.insertText(lineIndex, '\u21B3', { paraphraseMinorLabel: true }, 'user');
+    quill.insertText(lineIndex + 1, ' ', {}, 'user');
+    quill.formatLine(lineIndex, line.length(), { blueLine: false, blueSubline: true });
+    quill.setSelection(lineIndex + 2, 0, 'user');
+    return false;
+  }
+  return true;
 });
 
 quill.keyboard.addBinding({ key: 9, shiftKey: true }, (range, context) => {
   const [line] = quill.getLine(range.index);
   if (!line) return true;
-  const indent = (line.formats().indent || 0);
-  return indent > 1; // block Shift+Tab if indent is 1 or less
+  const formats = line.formats();
+  const lineIndex = quill.getIndex(line);
+  if (formats.blueSubline && range.index === lineIndex) {
+    quill.deleteText(lineIndex, 2, 'user');
+    quill.insertText(lineIndex, '\u2192', { paraphraseMainLabel: true }, 'user');
+    quill.insertText(lineIndex + 1, ' ', {}, 'user');
+    quill.formatLine(lineIndex, line.length(), { blueLine: true, blueSubline: false });
+    quill.setSelection(lineIndex + 2, 0, 'user');
+    return false;
+  }
+  return true;
 });
