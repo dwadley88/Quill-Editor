@@ -95,7 +95,7 @@ Quill.register(GreyText, true);
  ***************/
 const Delta = Quill.import('delta');
 
-function insertArrowLine(index, indent) {
+function insertArrowLine(index, indent, setCursor = true) {
   const arrow = indent === 0 ? '\u2192' : '\u21B3';
   const labelAttr = indent === 0 ? { paraphraseMainLabel: true } : { paraphraseMinorLabel: true };
   const lineAttr = indent === 0 ? { blueLine: true } : { blueSubline: true };
@@ -103,7 +103,8 @@ function insertArrowLine(index, indent) {
   quill.insertText(index + 1, ' ', {}, 'user');
   quill.insertText(index + 2, '\n', 'user');
   quill.formatLine(index + 2, 1, lineAttr);
-  quill.setSelection(index + 2, 0, 'user');
+  if (setCursor) quill.setSelection(index + 2, 0, 'user');
+  return index + 3;
 }
 
 function insertFeedbackBlock() {
@@ -143,8 +144,10 @@ function insertFeedbackBlock() {
   quill.insertText(insertIndex, mirror + '\n', 'user');
   quill.formatLine(insertIndex, mirror.length + 1, { blockquote: true, blackIndent: true });
 
-  const blueIndex = insertIndex + mirror.length + 1;
-  insertArrowLine(blueIndex, 0);
+  const firstArrow = insertIndex + mirror.length + 1;
+  const afterParaphrase = insertArrowLine(firstArrow, 0, false);
+  insertArrowLine(afterParaphrase, 1, false);
+  quill.setSelection(firstArrow + 2, 0, 'user');
 }
 
 function applyCorrection() {
