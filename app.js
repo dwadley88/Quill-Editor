@@ -76,11 +76,41 @@ wireCustomHandler('resetDoc', () => { /* restore your template */ });
   * Register Parchment formats so classes persist
   ***************/
 const Parchment = Quill.import('parchment');
-const ParagraphClass = new Parchment.Attributor.Class('paragraphClass', 'paragraph', { scope: Parchment.Scope.BLOCK });
-const BlackIndent = new Parchment.Attributor.Class('blackIndent', 'black-indent', { scope: Parchment.Scope.BLOCK });
-const BlueLine = new Parchment.Attributor.Class('blueLine', 'blue-line', { scope: Parchment.Scope.BLOCK });
-const BlueSubline = new Parchment.Attributor.Class('blueSubline', 'blue-subline', { scope: Parchment.Scope.BLOCK });
-const GreyText = new Parchment.Attributor.Class('greyText', 'grey-text', { scope: Parchment.Scope.INLINE });
+const ParagraphClass = new Parchment.Attributor.Class(
+  'paragraphClass',
+  'ql-paragraph',
+  { scope: Parchment.Scope.BLOCK }
+);
+const BlackIndent = new Parchment.Attributor.Class(
+  'blackIndent',
+  'ql-black-indent',
+  { scope: Parchment.Scope.BLOCK }
+);
+const BlueLine = new Parchment.Attributor.Class(
+  'blueLine',
+  'ql-blue-line',
+  { scope: Parchment.Scope.BLOCK }
+);
+const BlueSubline = new Parchment.Attributor.Class(
+  'blueSubline',
+  'ql-blue-subline',
+  { scope: Parchment.Scope.BLOCK }
+);
+const GreyText = new Parchment.Attributor.Class(
+  'greyText',
+  'ql-grey-text',
+  { scope: Parchment.Scope.INLINE }
+);
+const ParaphraseMainLabel = new Parchment.Attributor.Class(
+  'paraphraseMainLabel',
+  'ql-paraphrase-main-label',
+  { scope: Parchment.Scope.INLINE }
+);
+const ParaphraseMinorLabel = new Parchment.Attributor.Class(
+  'paraphraseMinorLabel',
+  'ql-paraphrase-minor-label',
+  { scope: Parchment.Scope.INLINE }
+);
 
 
 Quill.register(ParagraphClass, true);
@@ -88,6 +118,8 @@ Quill.register(BlackIndent, true);
 Quill.register(BlueLine, true);
 Quill.register(BlueSubline, true);
 Quill.register(GreyText, true);
+Quill.register(ParaphraseMainLabel, true);
+Quill.register(ParaphraseMinorLabel, true);
 
 
 /***************
